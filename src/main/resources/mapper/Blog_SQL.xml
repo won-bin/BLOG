@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="blog">
+	<insert id="insertM" parameterType="hashmap">
+		INSERT INTO BLOG_M(BM_NO, ID, PW, NAME, BLOG_NAME)
+		VALUES (BM_SEQ.NEXTVAL, #{joinId}, #{joinPw}, #{joinName}, #{blogName})
+	</insert>
+	<insert id="write" parameterType="hashmap">
+		INSERT INTO BLOG_B(B_NO, BM_NO, B_TITLE, B_CON, CTG_NO)
+		VALUES (B_SEQ.NEXTVAL, #{bmNo}, #{wTitle}, #{wCon}, #{wCategory})
+	</insert>
+	<insert id="insertCMT" parameterType="hashmap">
+		INSERT INTO BLOG_CMT(CMT_NO, B_NO, BM_NO, CMT_CON)
+		VALUES (CMT_SEQ.NEXTVAL, #{bNo}, #{bmNo}, #{comment_txt})
+	</insert>
+	<insert id="insertCtg" parameterType="hashmap">
+		INSERT INTO BLOG_CATEGORY(CTG_NO, CTG_NAME, BM_NO)
+		VALUES(CTG_SEQ.NEXTVAL, #{ctgName}, #{bmNo})
+	</insert>
+	
+	<select id="getM" parameterType="hashmap" resultType="hashmap">
+		SELECT BM_NO, ID, NAME, BLOG_NAME
+		FROM BLOG_M
+		WHERE ID = #{loginId}
+		AND PW = #{loginPw}
+		AND DEL_YN = 0
+	</select>
+	<select id="getB" parameterType="hashmap" resultType="hashmap">
+		SELECT RNUM, B_NO, B_TITLE, B_DT, CNT, CTG_NO
+		FROM(
+		SELECT ROW_NUMBER() OVER(PARTITION BY BM_NO ORDER BY B_NO DESC) AS RNUM, B_NO, B_TITLE, B_DT, CNT, BM_NO, CTG_NO
+				FROM (  SELECT B.B_NO, B.B_TITLE, B.B_DT,  COUNT(C.CMT_NO) AS CNT, B.BM_NO, B.CTG_NO
+						FROM( SELECT B_NO, B_TITLE, BM_NO, CTG_NO,
+						             CASE WHEN FLOOR(SYSDATE - B_DT) > 7
+				                  		  THEN TO_CHAR(B_DT, 'YYYY-MM-DD') || ''
+						             	  WHEN FLOOR(SYSDATE - B_DT) >= 1
+						                  THEN FLOOR(SYSDATE - B_DT) || '일전'
+						                  WHEN FLOOR((SYSDATE - B_DT) * 24) > 0
+						                  THEN FLOOR((SYSDATE - B_DT) * 24) || '시간전'
+						                  WHEN FLOOR((SYSDATE - B_DT) * 24 * 60) > 0
+						                  THEN FLOOR((SYSDATE - B_DT) * 24 * 60) || '분전'
+						                  ELSE '방금전'
+						             END AS B_DT
+						      FROM BLOG_B
+						      <if test="search_txt != null and search_txt != ''">
+						      	<![CDATA[
+							    WHERE B_TITLE LIKE '%' || #{search_txt} || '%'
+							    OR REGEXP_REPLACE(B_CON, '<[^>]+>') LIKE '%' || #{search_txt} || '%'
+							    ]]>
+						      </if>
+						    ) B LEFT OUTER JOIN BLOG_CMT C
+				                        ON B.B_NO = C.B_NO
+				GROUP BY B.B_NO, B.B_TITLE, B.B_DT, B.BM_NO, B.CTG_NO))
+		WHERE RNUM BETWEEN #{startCnt} AND #{endCnt}
+        AND BM_NO = #{bmNo}
+        <if test="ctgNo != ''">
+        	AND CTG_NO = #{ctgNo}
+        </if>
+	</select>
+	<select id="getLastB" parameterType="hashmap" resultType="hashmap">
+		SELECT B.B_TITLE, B.B_CON, B.B_DT, B.B_NO, B.BM_NO, C.CTG_NAME
+		FROM( SELECT B_TITLE, B_CON, TO_CHAR(B_DT, 'YYYY-MM-DD HH24:MI') AS B_DT, B_NO, BM_NO, CTG_NO
+		      FROM( SELECT RANK() OVER(PARTITION BY BM_NO ORDER BY B_NO DESC) AS RNK, B_TITLE, B_CON, B_DT, B_NO, BM_NO, CTG_NO
+		            FROM BLOG_B
+		            WHERE 1 = 1
+		            <if test="ctgNo != ''">
+			            AND CTG_NO = #{ctgNo}		            
+		            </if>
+		            <if test="search_txt != null and search_txt != ''">
+			            <![CDATA[
+							AND (B_TITLE LIKE '%' || #{search_txt} || '%'
+							OR REGEXP_REPLACE(B_CON, '<[^>]+>') LIKE '%' || #{search_txt} || '%')
+						]]>
+					</if>) B
+		      WHERE B.RNK = 1
+		      AND BM_NO = #{bmNo}) B LEFT OUTER JOIN BLOG_CATEGORY C
+		                                		  ON B.CTG_NO = C.CTG_NO
+	</select>
+	<select id="getOneB" parameterType="hashmap" resultType="hashmap">
+		SELECT B.B_NO, B.B_TITLE, B.B_CON, B.B_DT, B.BM_NO, C.CTG_NAME
+		FROM( SELECT B_NO, B_TITLE, B_CON, TO_CHAR(B_DT, 'YYYY-MM-DD HH24:MI') AS B_DT, BM_NO, CTG_NO
+		      FROM BLOG_B
+		      WHERE B_NO = #{bNo}) B LEFT OUTER JOIN BLOG_CATEGORY C
+		                                  ON B.CTG_NO = C.CTG_NO
+	</select>
+	<select id="getCMT" parameterType="hashmap" resultType="hashmap">
+		SELECT CMT_NO, CMT_CON, CMT_DT, BM.NAME AS NAME, B.RNUM
+		FROM( SELECT CMT_NO, BM_NO, CMT_CON, 
+		                     CASE WHEN FLOOR(SYSDATE - CMT_DT) > 7
+		                  		  THEN TO_CHAR(CMT_DT, 'YYYY-MM-DD HH24:MI') || ''
+				             	  WHEN FLOOR(SYSDATE - CMT_DT) >= 1
+				                  THEN FLOOR(SYSDATE - CMT_DT) || '일전'
+				                  WHEN FLOOR((SYSDATE - CMT_DT) * 24) > 0
+				                  THEN FLOOR((SYSDATE - CMT_DT) * 24) || '시간전'
+				                  WHEN FLOOR((SYSDATE - CMT_DT) * 24 * 60) > 0
+				                  THEN FLOOR((SYSDATE - CMT_DT) * 24 * 60) || '분전'
+				                  ELSE '방금전'
+				             END AS CMT_DT,
+				             ROW_NUMBER() OVER(ORDER BY CMT_NO DESC) AS RNUM
+		      FROM BLOG_CMT
+		      WHERE B_NO = #{bNo}) B INNER JOIN BLOG_M BM
+		                                 ON B.BM_NO = BM.BM_NO
+	</select>
+	<select id="getBCnt" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(*)
+		FROM BLOG_B
+		WHERE BM_NO = #{bmNo}
+		<if test="ctgNo != null and ctgNo != ''">
+			AND CTG_NO = #{ctgNo}	
+		</if>
+		<if test="search_txt != null and search_txt != ''">
+			<![CDATA[
+				AND (B_TITLE LIKE '%' || #{search_txt} || '%'
+				OR REGEXP_REPLACE(B_CON, '<[^>]+>') LIKE '%' || #{search_txt} || '%')
+			]]>
+		</if>
+	</select>
+	<select id="getEditM" parameterType="hashmap" resultType="hashmap">
+		SELECT NAME, BLOG_NAME
+		FROM BLOG_M
+		WHERE BM_NO = #{bmNo}
+	</select>
+	<select id="getBlog" parameterType="hashmap" resultType="hashmap">
+		SELECT B.B_NO, B.B_TITLE, B.B_CON, B.B_DT, B.NAME, COUNT(C.CMT_NO) AS CNT, B.BM_NO, B.RNUM
+		FROM( SELECT B.B_NO, B.B_TITLE, B.B_CON, B.B_DT, M.NAME, M.BM_NO, ROW_NUMBER() OVER(ORDER BY B.B_NO ASC) AS RNUM
+		      FROM(SELECT B_TITLE, B_CON, B_NO, BM_NO,
+		                  CASE WHEN FLOOR(SYSDATE - B_DT) > 7
+		                                              THEN TO_CHAR(B_DT, 'YYYY-MM-DD') || ''
+		                                              WHEN FLOOR(SYSDATE - B_DT) >= 1
+		                                              THEN FLOOR(SYSDATE - B_DT) || '일전'
+		                                              WHEN FLOOR((SYSDATE - B_DT) * 24) > 0
+		                                              THEN FLOOR((SYSDATE - B_DT) * 24) || '시간전'
+		                                              WHEN FLOOR((SYSDATE - B_DT) * 24 * 60) > 0
+		                                              THEN FLOOR((SYSDATE - B_DT) * 24 * 60) || '분전'
+		                                              ELSE '방금전'
+		                                         END AS B_DT
+		           FROM( SELECT RANK() OVER(PARTITION BY BM_NO ORDER BY B_NO DESC) AS RNK, B_TITLE, B_CON, B_DT, B_NO, BM_NO
+		                 FROM BLOG_B) B
+		           WHERE B.RNK = 1) B INNER JOIN BLOG_M M
+		                                      ON B.BM_NO = M.BM_NO
+		<if test="lCtgNo != ''">WHERE L_CTG_NO = #{lCtgNo}</if>) B LEFT OUTER JOIN BLOG_CMT C
+		                                   ON B.B_NO = C.B_NO
+		GROUP BY B.B_NO, B.B_TITLE, B.B_CON, B.B_DT, B.NAME, B.BM_NO, B.RNUM
+		ORDER BY B.RNUM DESC
+	</select>
+	<select id="getCtg" parameterType="hashmap" resultType="hashmap">
+		SELECT CTG.CTG_NO, CTG.CTG_NAME, COUNT(B.B_NO) AS CNT
+		FROM BLOG_CATEGORY CTG LEFT OUTER JOIN BLOG_B B
+		                               ON CTG.CTG_NO = B.CTG_NO
+		WHERE CTG.BM_NO = #{bmNo}
+		GROUP BY CTG.CTG_NO, CTG.CTG_NAME
+		ORDER BY CTG.CTG_NO
+	</select>
+	<select id="getBlogNm" parameterType="hashmap" resultType="hashmap">
+		SELECT BLOG_NAME
+		FROM BLOG_M
+		WHERE BM_NO = #{bmNo}
+	</select>
+	<select id="getBlogCtg" parameterType="hashmap" resultType="hashmap">
+		SELECT L_CTG_NO, L_CTG_NAME
+		FROM BLOG_LIST_CATEGORY
+	</select>
+	
+	<update id="exit" parameterType="hashmap">
+		UPDATE BLOG_M SET DEL_YN = 1
+		WHERE BM_NO = #{bmNo}
+	</update>
+	<update id="mEdit" parameterType="hashmap">
+		UPDATE BLOG_M SET NAME = #{bmNm}, BLOG_NAME = #{bmBn}
+		WHERE BM_NO = #{bmNo}
+	</update>
+	<update id="pwEdit" parameterType="hashmap">
+		UPDATE BLOG_M SET PW = #{bmPw}
+		WHERE BM_NO = #{bmNo}
+	</update>
+	<update id="bEdit" parameterType="hashmap">
+		UPDATE BLOG_B SET B_TITLE = #{wTitle}, B_CON = #{wCon}, CTG_NO = #{wCategory}
+		WHERE B_NO = #{bNo}
+	</update>
+	
+	<delete id="delCMT" parameterType="hashmap">
+		DELETE FROM BLOG_CMT
+		WHERE CMT_NO = #{cmtNo}
+	</delete>
+	<delete id="bDel" parameterType="hashmap">
+		DELETE FROM BLOG_B
+		WHERE B_NO = #{bNo}
+	</delete>
+	<delete id="delCtg" parameterType="hashmap">
+		DELETE FROM BLOG_CATEGORY
+		WHERE CTG_NO = #{ctgNo}
+	</delete>
+</mapper>
