@@ -3,6 +3,9 @@
 
 Preview
 ---
+![Blog_Login](https://user-images.githubusercontent.com/60736222/74742526-1644ab00-52a2-11ea-9ab8-af727ba726e3.PNG)
+![Blog_List](https://user-images.githubusercontent.com/60736222/74742677-586dec80-52a2-11ea-9f7e-aa0e3af69189.PNG)
+![Blog_Main](https://user-images.githubusercontent.com/60736222/74742683-5b68dd00-52a2-11ea-903b-ebbc0ffe3479.PNG)
 
 
 Development Tools
