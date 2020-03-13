@@ -123,4 +123,9 @@ public class BlogService implements IBlogService{
 		iBlogDao.delCtg(params);
 	}
 
+	@Override
+	public int idCheck(HashMap<String, String> params) throws Throwable {
+		return iBlogDao.idCheck(params);
+	}
+
 }

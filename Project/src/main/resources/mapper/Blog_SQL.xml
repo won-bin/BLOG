@@ -160,6 +160,11 @@
 		SELECT L_CTG_NO, L_CTG_NAME
 		FROM BLOG_LIST_CATEGORY
 	</select>
+	<select id="idCheck" parameterType="hashmap" resultType="Integer">
+		SELECT COUNT(ID)
+		FROM BLOG_M
+		WHERE ID = #{joinId}
+	</select>
 	
 	<update id="exit" parameterType="hashmap">
 		UPDATE BLOG_M SET DEL_YN = 1

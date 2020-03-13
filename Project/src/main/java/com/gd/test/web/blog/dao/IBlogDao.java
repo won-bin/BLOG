@@ -49,4 +49,6 @@ public interface IBlogDao {
 
 	public void delCtg(HashMap<String, String> params) throws Throwable;
 
+	public int idCheck(HashMap<String, String> params) throws Throwable;
+
 }

@@ -399,8 +399,8 @@ input{
  	width: 600px;
 	height: 520px;
 	position: absolute;
-	top: 120px;
-	left: calc(50% - 300px)
+	top: 10%;
+	left: calc(50% - 300px);
 }
 
 .join_area > form > table{
@@ -419,8 +419,12 @@ input{
 }
 
 .join_area > form > table > tbody > tr > td > input {
-	width: 400px;
+	width: 200px;
 	height: 40px;
+	font-size: 11pt;
+}
+
+#idMsg,#pwMsg,#pwCheckMsg {
 	font-size: 11pt;
 }
 

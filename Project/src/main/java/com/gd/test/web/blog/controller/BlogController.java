@@ -470,4 +470,19 @@ public class BlogController {
 		
 		return mapper.writeValueAsString(modelMap);
 	}
+	
+	@RequestMapping(value="/joinIdCheckAjax", method = RequestMethod.POST,
+			produces = "text/json;charset=UTF-8")
+	@ResponseBody
+	public String joinIdCheckAjax(@RequestParam HashMap<String, String> params) throws Throwable{
+		
+		ObjectMapper mapper = new ObjectMapper();
+		Map<String, Object> modelMap = new HashMap<String, Object>();
+		
+		int cnt = iBlogService.idCheck(params);
+		
+		modelMap.put("cnt", cnt);
+		
+		return mapper.writeValueAsString(modelMap);
+	}
 }

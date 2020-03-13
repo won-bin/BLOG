@@ -121,5 +121,10 @@ public class BlogDao implements IBlogDao{
 	public void delCtg(HashMap<String, String> params) throws Throwable {
 		sqlSession.delete("blog.delCtg", params);
 	}
+
+	@Override
+	public int idCheck(HashMap<String, String> params) throws Throwable {
+		return sqlSession.selectOne("blog.idCheck", params);
+	}
 	
 }

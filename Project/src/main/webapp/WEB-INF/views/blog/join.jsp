@@ -7,11 +7,17 @@
 <title>회원가입</title>
 <link rel="stylesheet" type="text/css" href="resources/css/blog/blog.css"/>
 <script type="text/javascript" src="resources/script/jquery/jquery-1.12.4.min.js" ></script>
+<script type="text/javascript" src="resources/script/jquery/jquery.slimscroll.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {
+	$(".join_bg").slimscroll({
+		height: "100%",
+		width: "100%"
+	});
+	
 	$("#joinBtn").on("click", function() {
-		if($.trim($("#joinId").val()) == ""){
-			alert("아이디를 입력해주세요");
+		if($("#idVal").val() == 0){
+			alert("아이디를 확인해주세요.");
 			$("#joinId").focus();
 		} else if($.trim($("#joinPw").val()) == ""){
 			alert("비밀번호를 입력해주세요");
@@ -41,6 +47,57 @@ $(document).ready(function() {
 					console.log("error : " + error);
 				}
 			});
+		}
+	});
+	
+	$("#joinId").focusout(function() {
+		var params = $("#actionForm").serialize();
+		
+		$.ajax({
+			type : "post",
+			url : "joinIdCheckAjax",
+			datatype : "json",
+			data : params,
+			success : function(result) {
+				if($.trim($("#joinId").val()) == ""){
+					$("#idMsg").html("아이디를 입력해주세요.");
+					$("#idMsg").css("color", "#F00");
+					$("#idVal").val(0);
+				}else if(result.cnt > 0){
+					$("#idMsg").html("중복된 아이디가 있습니다.");
+					$("#idMsg").css("color", "#F00");
+					$("#idVal").val(0);
+				} else {
+					$("#idMsg").html("사용가능");
+					$("#idMsg").css("color", "#0B0");
+					$("#idVal").val(1);
+				}
+			},
+			error : function(request, status, error) {
+				console.log("status : " + request.status);
+				console.log("text : " + request.responseText);
+				console.log("error : " + error);
+			}
+		});
+	});
+	
+	$("#joinPw").focusout(function() {
+		if($("#joinPw").val().length < 9){
+			$("#pwMsg").html("9자 이상 적어주세요.");
+			$("#pwMsg").css("color", "#F00");
+		}else {
+			$("#pwMsg").html("사용가능");
+			$("#pwMsg").css("color", "#0B0");
+		}
+	});
+	
+	$("#joinPwCheck").focusout(function() {
+		if($("#joinPw").val() != $("#joinPwCheck").val()){
+			$("#pwCheckMsg").html("비밀번호가 일치 하지 않습니다");
+			$("#pwCheckMsg").css("color", "#F00");
+		}else {
+			$("#pwCheckMsg").html("일치");
+			$("#pwCheckMsg").css("color", "#0B0");
 		}
 	});
 	
@@ -92,6 +149,7 @@ $(document).ready(function() {
 </script>
 </head>
 <body>
+<input type="hidden" id="idVal" value=0 />
 <div class="join_bg">
 	<div class="join_area">
 		<div class="join_title_txt">회원가입<br/></div>
@@ -105,15 +163,15 @@ $(document).ready(function() {
 				<tbody>
 					<tr class="a">
 						<th>아이디</th>
-						<td><input type="text" id="joinId" name="joinId" placeholder="아이디를 입력해주세요."/></td>
+						<td><input type="text" id="joinId" name="joinId" placeholder="아이디를 입력해주세요."/><span id="idMsg"></span></td>
 					</tr>
 					<tr class="b">
 						<th>비밀번호</th>
-						<td><input type="password" id="joinPw" name="joinPw" placeholder="비밀번호를 입력해주세요."/></td>
+						<td><input type="password" id="joinPw" name="joinPw" placeholder="비밀번호를 입력해주세요."/><span id="pwMsg"></span></td>
 					</tr>
 					<tr class="c">
 						<th>비밀번호 확인</th>
-						<td><input type="password" id="joinPwCheck" name="joinPwCheck" placeholder="비밀번호를 한번더 입력해주세요."/></td>
+						<td><input type="password" id="joinPwCheck" name="joinPwCheck" placeholder="비밀번호를 한번더 입력해주세요."/><span id="pwCheckMsg"></span></td>
 					</tr>
 					<tr class="d">
 						<th>이름</th>

@@ -9,6 +9,12 @@
 <script type="text/javascript" src="resources/script/jquery/jquery-1.12.4.min.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {
+	$("html").on("keypress", function() {
+		if(event.keyCode == 13) {
+			$("#loginBtn").click();
+		}
+	})
+	
 	$("#loginBtn").on("click", function() {
 		if($("#loginId").val() == "") {
 			alert("아이디를 입력하세요");
